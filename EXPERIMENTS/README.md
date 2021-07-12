@@ -6,11 +6,7 @@
 ```bash
 ./prepare.py
 ```
-+ OPQ parepare (if using OPQ) **Make sure dependencies were installed before the following preparing steps**
-```bash
-cd OPQ/TransForm_Data
-# run main.m with Matlab
-```
+
 + Run experiments
 ```bash
 Usage: run.sh [-ahr]
