@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/is_same_example.dir/is_same_example.cpp.o  -o is_same_example  -L/media/gtnetuser/Dell/StringSimilarity 

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libcover_tree.a  CMakeFiles/cover_tree.dir/3rd_party/srs/SRSCoverTree.cpp.o
+/usr/bin/ranlib libcover_tree.a

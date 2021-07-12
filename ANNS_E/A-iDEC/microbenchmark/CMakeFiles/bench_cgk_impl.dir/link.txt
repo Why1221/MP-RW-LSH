@@ -1,0 +1,1 @@
+/usr/bin/c++  -O3 -DNDEBUG  -rdynamic CMakeFiles/bench_cgk_impl.dir/bench_cgk_impl.cpp.o  -o bench_cgk_impl  -L/media/gtnetuser/Dell/StringSimilarity -Wl,-rpath,/media/gtnetuser/Dell/StringSimilarity /usr/local/lib/libbenchmark.a -lpthread 

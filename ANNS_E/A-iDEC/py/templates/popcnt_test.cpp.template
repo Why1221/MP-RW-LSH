@@ -1,0 +1,68 @@
+#include <catch2/catch.hpp>
+#include <utils.hpp>
+
+using namespace ss::util;
+
+TEST_CASE{{ "(" }}"popcnt tests", "{{ "[" }}single-file{{ "]" }}"{{ ")" }} {{ "{" }}
+
+    SECTION{{ "(" }}"unsigned int"{{ ")" }} {{ "{" }}
+        {% for test in tests.unsigned_int_tests %}
+            REQUIRE{{ "(" }}popcnt<unsigned int>{{ "(" }}{{ test.in }}{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"unsigned long long"{{ ")" }}{{ "{" }}
+        {% for test in tests.unsigned_long_long_tests %}
+            REQUIRE{{ "(" }}popcnt<unsigned long long >{{ "(" }}{{ test.in }}{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"unsigned short"{{ ")" }}{{ "{" }}
+        unsigned short x;
+        {% for test in tests.unsigned_short_tests %}
+        x = {{ test.in }};
+        REQUIRE{{ "(" }}popcnt{{ "(" }}x{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"unsigned long"{{ ")" }}{{ "{" }}
+        unsigned long x
+        {% for test in tests.unsigned_long_tests %}
+        x = {{ test.in }};
+        REQUIRE{{ "(" }}popcnt{{ "(" }}x{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"uint8_t"{{ ")" }}{{ "{" }}
+        uint8_t x;
+        {% for test in tests.uint8_t_tests %}
+        x = {{ test.in }};
+        REQUIRE{{ "(" }}popcnt{{ "(" }}x{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"uint16_t"{{ ")" }}{{ "{" }}
+        uint16_t x;
+        {% for test in tests.uint16_t_tests %}
+        x = {{ test.in }};
+        REQUIRE{{ "(" }}popcnt{{ "(" }}x{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"uint32_t"{{ ")" }}{{ "{" }}
+        uint32_t x;
+        {% for test in tests.uint32_t_tests %}
+        x = {{ test.in }};
+        REQUIRE{{ "(" }}popcnt{{ "(" }}x{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+    SECTION{{ "(" }}"uint64_t"{{ ")" }} {
+        uint64_t x;
+        {% for test in tests.uint64_t_tests %}
+        x = {{ test.in }};
+        REQUIRE{{ "(" }}popcnt{{ "(" }}x{{ ")" }} == {{ test.out }} {{ ")" }};
+        {% endfor %}
+    {{ "}" }}
+
+{{ "}" }}

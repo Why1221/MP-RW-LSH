@@ -1,0 +1,28 @@
+namespace bench_config::hamming{
+    // million-level data sets
+    constexpr char DATA_PATH[]              = "@DATA_PATH@"; // path where data is storing
+    constexpr char DATA_SETS[]              = "@DATA_SETS@"; // names of data set files (separating by ";")
+    constexpr char RESULT_PATH[]            = "@RESULT_PATH@"; // result path
+    constexpr char INDEX_PATH_REL[]         = "@INDEX_PATH_REL@"; // index path (relative to result path)
+    constexpr char RAW_DATASET_NAME[]       = "@RAW_DATASET@"; //
+    constexpr char QUERY_DATASET_NAME[]     = "@QUERY_DATASET@";
+    constexpr char GND_DIST_DATASET_NAME[]  = "@GND_DIST_DATASET@";
+    constexpr char COMPACT_WORDSIZE_NAME[]  = "@WORDSIZE_DATASET@";
+    constexpr char KNN_K_NAME[]             = "@KNN_K@";
+
+
+
+    // billion-level data sets
+    namespace billion_level {
+            constexpr char DATA_PATH[]                      = "@DATA_PATH_BL@"; // path where data is storing
+            constexpr char DATA_SETS[]                      = "@DATA_SETS_BL@"; // names of data set files (separating by ";")
+            constexpr char RESULT_PATH[]                    = "@RESULT_PATH_BL@"; // result path
+            constexpr char INDEX_PATH_REL[]                 = "@INDEX_PATH_REL_BL@"; // index path (relative to result path)
+            constexpr char RAW_DATASET_PREFIX_NAME[]        = "@RAW_DATASET_PREFIX_BL@"; //
+            constexpr char RAW_DATASET_BLOCKSIZE_NAME[]     = "@RAW_DATASET_BLOCKSIZE_BL@"; //
+            constexpr char RAW_DATASET_NBLOCKS_NAME[]       = "@RAW_DATASET_NBLOCKS_BL@"; //
+            constexpr char QUERY_DATASET_NAME[]             = "@QUERY_DATASET_BL@";
+            constexpr char COMPACT_WORDSIZE_NAME[]          = "@WORDSIZE_DATASET_BL@";
+            constexpr char KNN_K_NAME[]                     = "@KNN_K_BL@";
+    }
+}

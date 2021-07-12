@@ -1,0 +1,21 @@
+#include <catch2/catch.hpp>
+#include <utils.hpp>
+#include <vector>
+
+using namespace ss::util;
+TEST_CASE("Tests for dot product", "[single-file]") {{"{"}}
+
+    {% for tests in all_tests %}
+    SECTION("{{ tests.description }}") {{"{"}}
+        {% for test in tests.tests %}
+        {{"{"}}
+              {{ test.va.dtype }} va[] = {{ "{"}} {{test.va.data}} {{"}"}}  ;
+              {{ test.vb.dtype }} vb[] = {{ "{"}} {{test.vb.data}} {{"}"}}  ;
+              size_t l = {{ test.dlen }};
+              REQUIRE({{tests.func}}(va, vb, l) == {% if test.rtype == 'float' %}Approx({{ test.res }}).epsilon(0.01){% else %} {{ test.res }} {% endif %});
+        {{"}"}}
+        {% endfor %}
+    {{"}"}}
+
+    {% endfor %}
+{{"}"}}

@@ -1,0 +1,1 @@
+MNIST%MNIST-l1-784-train.fvecs%MNIST-l1-784-test.fvecs%MNIST-l1-784-train.txt%MNIST-l1-784-test.txt%69000%784%200%MNIST-l1-784.h5%2000%12%930%8%384416

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libproj_data.a  CMakeFiles/proj_data.dir/3rd_party/srs/ProjData.cpp.o
+/usr/bin/ranlib libproj_data.a

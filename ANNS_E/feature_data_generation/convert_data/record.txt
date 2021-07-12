@@ -1,0 +1,13 @@
+MP-RW-LSH 
+
+Multiset GEN50KS  TREC Enron UNIREF
+
+Context GEN50KS TREC Enron UNIREF
+
+
+
+iDEC
+
+Multiset UNIREF: t=14000 
+
+Context GEN50KS:t=3000 UNIREF: t=8000
