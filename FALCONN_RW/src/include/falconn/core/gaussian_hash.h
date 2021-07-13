@@ -47,8 +47,8 @@
 
 namespace falconn {
 namespace core {
-// Set number of hash bits to 20
-const int hash_bits = 21;
+// Set number of hash bits to 21
+const int hash_bits = 22;
 // template <typename CoordinateType>
 // inline int_fast32_t hash_round(CoordinateType coor, int_fast32_t levels){
 //   int_fast32_t half_bucket_num = 1 << (levels-1);
