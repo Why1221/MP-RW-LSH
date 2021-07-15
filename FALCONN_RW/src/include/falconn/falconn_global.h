@@ -84,6 +84,8 @@ struct QueryStatistics {
   /// Average hashing time
   ///
   double average_lsh_time = 0.0;
+
+  double average_multiprobe_time = 0.0;
   ///
   /// Average hash table retrieval time
   ///
@@ -119,6 +121,7 @@ struct QueryStatistics {
     average_num_candidates *= num_queries;
     average_num_unique_candidates *= num_queries;
     average_num_filtered_candidates *= num_queries;
+    average_multiprobe_time *= num_queries;
   }
 
   void compute_averages() {
@@ -128,6 +131,7 @@ struct QueryStatistics {
       average_hash_table_time /= num_queries;
       average_sketches_time /= num_queries;
       average_distance_time /= num_queries;
+      average_multiprobe_time /= num_queries;
       average_num_candidates /= num_queries;
       average_num_unique_candidates /= num_queries;
       average_num_filtered_candidates /= num_queries;

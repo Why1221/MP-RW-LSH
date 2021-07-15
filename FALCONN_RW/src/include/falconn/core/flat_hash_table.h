@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include <fstream>
+
 #include "hash_table_helpers.h"
 
 #include <serialize.h>
@@ -81,7 +83,44 @@ class FlatHashTable {
     bucket_list_[num_buckets_] = keys.size();
   }
 
+  void add_entries_from_stream(std::ifstream& fin){
+    if (num_buckets_ <= 0) {
+      throw FlatHashTableError("Non-positive number of buckets");
+    }
+    if (entries_added_) {
+      throw FlatHashTableError("Entries were already added.");
+    }
+
+    entries_added_ = true;
+    bucket_list_.resize(num_buckets_ + 1, 0);
+
+    for (int i = 0; i <= num_buckets_; ++i){
+      fin >> bucket_list_[i];
+    }
+
+    // bucket_list_[num_buckets_] == keys.size();
+    int index_num = bucket_list_[num_buckets_];
+    indices_.resize(index_num, 0);
+    for (int i = 0; i < index_num; ++i){
+      fin >> indices_[i];
+    }
+  }
+
+  void dump_entries_to_stream(std::ofstream& fout) const{
+    for (int i = 0; i <= num_buckets_; ++i){
+      fout << bucket_list_[i] << "\t";
+    }
+    fout << std::endl;
+
+    // bucket_list_[num_buckets_] == keys.size();
+    for (int i = 0; i < indices_.size(); ++i){
+      fout << indices_[i] << "\t";
+    }
+    fout << std::endl;
+  }
+
   std::pair<Iterator, Iterator> retrieve(const KeyType& key) {
+    // std::cout << key << std::endl;
     IndexType start = bucket_list_[key];
     IndexType end = bucket_list_[key + 1];
     // printf("retrieve for key %u\n", key);

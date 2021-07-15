@@ -10,6 +10,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <string>
 
 #include "../falconn_global.h"
 #include "data_storage.h"
@@ -33,7 +34,7 @@ class StaticLSHTable2
                                           HashTable, MultiProbe, DataStorageType> > {
  public:
   StaticLSHTable2(LSH* lsh, HashTable* hash_table, const DataStorageType& points,
-                 int_fast32_t num_setup_threads)
+                 int_fast32_t num_setup_threads, bool load_index, std::string filename)
       : BasicLSHTable<LSH, HashTable,
                       StaticLSHTable2<PointType, KeyType, LSH, HashType,
                                      HashTable, MultiProbe, DataStorageType>>(lsh,
@@ -63,7 +64,7 @@ class StaticLSHTable2
       }
       thread_results.push_back(std::async(
           std::launch::async, &StaticLSHTable2::setup_table_range, this,
-          next_table_range_start, next_table_range_end, points));
+          next_table_range_start, next_table_range_end, points, load_index, filename));
       next_table_range_start = next_table_range_end + 1;
     }
 
@@ -84,10 +85,10 @@ class StaticLSHTable2
   // TODO: add query statistics back in
   class Query {
    public:
-    Query(const StaticLSHTable2& parent)
+    Query(const StaticLSHTable2& parent, unsigned num_probes)
         : parent_(parent),
           is_candidate_(parent.n_),
-          lsh_query_(*(parent.lsh_)) {}
+          lsh_query_(*(parent.lsh_), num_probes) {}
 
     void get_candidates_with_duplicates(const PointType& p,
                                         int_fast64_t num_probes,
@@ -97,16 +98,25 @@ class StaticLSHTable2
         throw LSHTableError("Results vector pointer is nullptr.");
       }
 
-      auto start_time = std::chrono::high_resolution_clock::now();
       stats_.num_queries += 1;
 
-      lsh_query_.get_probes_by_table(p, &tmp_probes_by_table_, num_probes);
+      auto start_time = std::chrono::high_resolution_clock::now();
+
+      lsh_query_.get_transformed_vector(p);
 
       auto lsh_end_time = std::chrono::high_resolution_clock::now();
       auto elapsed_lsh =
           std::chrono::duration_cast<std::chrono::duration<double>>(
               lsh_end_time - start_time);
       stats_.average_lsh_time += elapsed_lsh.count();
+
+      lsh_query_.get_probes_by_table(&tmp_probes_by_table_, num_probes);
+
+      auto multiprobe_end_time = std::chrono::high_resolution_clock::now();
+      auto elapsed_multiprobe =
+          std::chrono::duration_cast<std::chrono::duration<double>>(
+              multiprobe_end_time - lsh_end_time);
+      stats_.average_multiprobe_time += elapsed_lsh.count();
 
       hash_table_iterators_ =
           parent_.hash_table_->retrieve_bulk(tmp_probes_by_table_);
@@ -191,13 +201,21 @@ class StaticLSHTable2
                                         std::vector<KeyType>* result) {
       auto start_time = std::chrono::high_resolution_clock::now();
 
-      lsh_query_.get_probes_by_table(p, &tmp_probes_by_table_, num_probes);
+      lsh_query_.get_transformed_vector(p);
 
       auto lsh_end_time = std::chrono::high_resolution_clock::now();
       auto elapsed_lsh =
           std::chrono::duration_cast<std::chrono::duration<double>>(
               lsh_end_time - start_time);
       stats_.average_lsh_time += elapsed_lsh.count();
+
+      lsh_query_.get_probes_by_table(&tmp_probes_by_table_, num_probes);
+
+      auto multiprobe_end_time = std::chrono::high_resolution_clock::now();
+      auto elapsed_multiprobe =
+          std::chrono::duration_cast<std::chrono::duration<double>>(
+              multiprobe_end_time - lsh_end_time);
+      stats_.average_multiprobe_time += elapsed_multiprobe.count();
 
       //for (auto id : tmp_probes_by_table_[0]){
       //  std::cout << id << " ";
@@ -229,7 +247,7 @@ class StaticLSHTable2
       auto hashing_end_time = std::chrono::high_resolution_clock::now();
       auto elapsed_hashing =
           std::chrono::duration_cast<std::chrono::duration<double>>(
-              hashing_end_time - lsh_end_time);
+              hashing_end_time - multiprobe_end_time);
       stats_.average_hash_table_time += elapsed_hashing.count();
 
       auto sketches_end_time = std::chrono::high_resolution_clock::now();
@@ -249,13 +267,24 @@ class StaticLSHTable2
 
   // from and to are id of hash tables
   void setup_table_range(int_fast32_t from, int_fast32_t to,
-                         const DataStorageType& points) {
+                         const DataStorageType& points, bool load_index, std::string filename) {
     typename LSH::template BatchHash<DataStorageType> bh(*(this->lsh_));
-    std::vector<HashType> table_hashes;
-    for (int_fast32_t ii = from; ii <= to; ++ii) {
-      bh.batch_hash_single_table(points, ii, &table_hashes);
-      this->hash_table_->add_entries_for_table(table_hashes, ii);
+    if (load_index){
+      std::ifstream fin(filename);
+      for (int_fast32_t ii = from; ii <= to; ++ii) {
+        this->hash_table_->add_entries_from_stream(fin, ii);
+      }
+    } else {
+      std::ofstream fout(filename);
+      std::vector<HashType> table_hashes;
+
+      for (int_fast32_t ii = from; ii <= to; ++ii) {
+        bh.batch_hash_single_table(points, ii, &table_hashes);
+        this->hash_table_->add_entries_for_table(table_hashes, ii);
+        this->hash_table_->dump_table_to_stream(fout, ii);
+      }
     }
+
   }
 };
 

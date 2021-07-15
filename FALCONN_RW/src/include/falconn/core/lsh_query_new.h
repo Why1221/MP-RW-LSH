@@ -3,6 +3,9 @@
 
 #include "../falconn_global.h"
 #include "lsh_function_helpers.h"
+#include <fstream>
+
+#include <chrono>
 
 namespace falconn {
 namespace core {
@@ -73,8 +76,8 @@ class HashObjectQuery2 {
     std::pair<HashType, int_fast32_t> cur_val_;
   };
 
-  HashObjectQuery2(const HashFunction& parent)
-      : parent_(parent), multiprobe_(parent), hash_transformation_(parent) {
+  HashObjectQuery2(const HashFunction& parent, unsigned num_probes)
+      : parent_(parent), multiprobe_(parent, num_probes), hash_transformation_(parent) {
     parent_.reserve_transformed_vector_memory(&transformed_vector_);
   }
 
@@ -86,14 +89,20 @@ class HashObjectQuery2 {
                           ProbingSequenceIterator(nullptr));
   }
 
-  void get_probes_by_table(const VectorType& point,
-                           std::vector<std::vector<HashType>>* probes,
+  void get_transformed_vector(const VectorType& point){
+    hash_transformation_.apply(point, &transformed_vector_);
+  }
+
+  void get_probes_by_table(std::vector<std::vector<HashType>>* probes,
                            int_fast64_t num_probes) {
     if (num_probes < parent_.l_) {
       throw LSHFunctionError(
           "Number of probes must be at least "
           "the number of tables.");
     }
+
+   // static std::ofstream fout("multiprobe_bucket.txt");
+
     if (static_cast<int_fast64_t>(probes->size()) != parent_.l_) {
       probes->resize(parent_.l_);
     }
@@ -101,19 +110,24 @@ class HashObjectQuery2 {
       (*probes)[ii].clear();
     }
 
-    hash_transformation_.apply(point, &transformed_vector_);
     multiprobe_.setup_probing(transformed_vector_, num_probes);
 
     int_fast32_t cur_table;
     HashType cur_probe;
+
 
     for (int_fast64_t ii = 0; ii < num_probes; ++ii) {
       if (!multiprobe_.get_next_probe(&cur_probe, &cur_table)) {
         continue;
       }
       // printf("%u %d\n", cur_probe, cur_table);
+      
+     // if (ii < 10){
+     //   fout << cur_probe << "\t";
+      //}
       (*probes)[cur_table].push_back(cur_probe);
     }
+ // fout << std::endl;
   }
 
  private:
@@ -121,6 +135,7 @@ class HashObjectQuery2 {
   MultiProbe<HashFunction> multiprobe_;
   HashTransformation hash_transformation_;
   TransformedVectorType transformed_vector_;
+
 };
 
 }  // namespace core

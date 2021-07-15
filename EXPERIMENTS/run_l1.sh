@@ -17,7 +17,7 @@ function usage {
     printf -- ' -a: (default) run (A)ll algorithms - good luck!\n' >&2
     printf -- ' -c: clean all!\n' >&2
     printf -- ' -h: print this (H)elp message\n' >&2
-    printf -- ' -r <alg>: only run <alg>, where <alg>=LinearScan|FALCONN|FALCONN_cauchy|SRS|FALCONN_ToW\n' >&2
+    printf -- ' -r <alg>: only run <alg>, where <alg>=LinearScan|FALCONN|FALCONN_cauchy|FALCONN_RW\n' >&2
     exit 2
 }
 
@@ -26,12 +26,12 @@ DEBUG=0
 
 # Global variables
 WORKING_DIR=$(pwd)
-LINEARSCAN_DIR=../../external-memory/LinearScan
+LINEARSCAN_DIR=../LinearScan
 DATASETS=( $( cat dataset_info.txt ) )
 
 
 # Parameters for algorithms
-MAX_K=500
+MAX_K=50
 APP_RATIO=2
 
 # # SRS parameters
@@ -60,12 +60,8 @@ iDEC_T=(0.0000000006)
 # A special iDEC T for high dimensional dataset
 # iDEC_T=(0.025 0.03 0.035 0.040 0.045)
 
-# # FALCONN (MP LSH) parameter
-# FALCONN_M_cauchy=(6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
-# FALCONN_L_cauchy=100
-FALCONN_M_cauchy=(5 6 7 8 9 10)
-FALCONN_L_C=(10)
-# FALCONN_M_ToW=(8 9 10 11 12 13 14 15 16)
+# # FALCONN (MP LSH and Cauchy LSH) parameter
+FALCONN_L_cauchy=(100 120)
 FALCONN_L_ToW=(8)
 
 # # OPQ parameter
@@ -140,7 +136,7 @@ function CleanLinearScan {
 function CompileFALCONN {
     cd ${WORKING_DIR}
     echo "Compile FALCONN ..."
-    cd ../FALCONN
+    cd ../FALCONN_RW
     make clean
     make falconn-l1
     chmod +x ./falconn-l1
@@ -198,28 +194,28 @@ function RunFALCONN {
 function CleanFALCONN {
     echo "Clean FALCONN ..."
     cd ${WORKING_DIR}
-    cd ../FALCONN
+    cd ../FALCONN_RW
     make clean
     echo "Done"
 }
 
 # Compile FALCONN (No MP LSH)
-function CompileFALCONN_ToW {
+function CompileFALCONN_RW {
     cd ${WORKING_DIR}
     echo "Compile FALCONN ..."
-    cd ../FALCONN
+    cd ../FALCONN_cauchy
     make clean
-    make falconn-l1
-    chmod +x ./falconn-l1
-    cp ./falconn-l1 ${WORKING_DIR}
+    make falconn-l1-rw
+    chmod +x ./falconn-l1-rw
+    cp ./falconn-l1-rw ${WORKING_DIR}
     cd ${WORKING_DIR}
     echo "Done."
 }
 
 # Run FALCONN (MP LSH)
-function RunFALCONN_ToW {
+function RunFALCONN_RW {
     cd ${WORKING_DIR}
-    if [ ! -f ./falconn-l1 ]; then
+    if [ ! -f ./falconn-l1-rw ]; then
         error_exit "Executable file ${WORKING_DIR}/falconn-l1 does not exist, please compile it and copy it to ${WORKING_DIR} first ..."
     fi
 
@@ -235,27 +231,27 @@ function RunFALCONN_ToW {
 
     printf "Run FALCONN-l1 on dataset %s ...\n" "${dsname}"
     #mkdir -p FALCONN/${dsname}/index
-    mkdir -p FALCONN_L1_ToW/${dsname}/results
-    cp ./falconn-l1 FALCONN_L1_ToW/${dsname}
-    cd FALCONN_L1_ToW/${dsname}
+    mkdir -p FALCONN_L1_RW/${dsname}/results
+    cp ./falconn-l1-rw FALCONN_L1_RW/${dsname}
+    cd FALCONN_L1_RW/${dsname}
     for L in "${FALCONN_L_ToW[@]}"
     do
         T=$L
         mkdir -p index-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$L
-        echo "./falconn-l1 -a precompute -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $T -m ${FALCONN_M_ToW} -u ${universe} -k {MAX_K} -w ${FALCONN_W_ToW} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$L -rf ./results/falconn_l1_ToW-$L-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$T.txt -li false -lp ./indices/falconn_index-$L-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$T.txt"
+        echo "./falconn-l1-rw -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_ToW} -u ${universe} -k ${MAX_K} -w ${FALCONN_W_ToW} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$L -rf ./results/falconn_l1_ToW-$L-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$T.txt "
         if [ $DEBUG == 0 ]
         then
-            ./falconn-l1 -a precompute -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_ToW} -u ${universe} -k {MAX_K} -w ${FALCONN_W_ToW} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$L -rf ./results/falconn_l1_ToW-$L-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$T.txt -li false -lp ./indices/falconn_index-$L-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$T.txt
+            ./falconn-l1-rw -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_ToW} -u ${universe} -k ${MAX_K} -w ${FALCONN_W_ToW} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$L -rf ./results/falconn_l1_ToW-$L-${FALCONN_M_ToW}-${FALCONN_W_ToW}-$T.txt 
         fi
     done
     echo "Done"
 }
 
 # Clean FALCONN (MP LSH)
-function CleanFALCONN_ToW {
+function CleanFALCONN_RW {
     echo "Clean FALCONN ..."
     cd ${WORKING_DIR}
-    cd ../FALCONN
+    cd ../FALCONN_cauchy
     make clean
     echo "Done"
 }
@@ -265,7 +261,7 @@ function CleanFALCONN_ToW {
 function CompileFALCONN_cauchy {
     cd ${WORKING_DIR}
     echo "Compile FALCONN_cauchy ..."
-    cd ../FALCONN
+    cd ../FALCONN_cauchy
     make clean
     make falconn-l1-cauchy
     chmod +x ./falconn-l1-cauchy
@@ -297,15 +293,15 @@ function RunFALCONN_cauchy {
     mkdir -p FALCONN_L1_Cauchy/${dsname}/results
     cp ./falconn-l1-cauchy FALCONN_L1_Cauchy/${dsname}
     cd FALCONN_L1_Cauchy/${dsname}
-    for L in "${FALCONN_L_C[@]}"
+    for L in "${FALCONN_L_cauchy[@]}"
     do
         echo $L
         T=$L
         mkdir -p index-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}-$L
-        echo "./falconn-l1-cauchy -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_Cauchy} -u ${universe} -k 50 -w ${FALCONN_W_Cauchy} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}-$L -rf ./results/falconn_l1-$L-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}.txt"
+        echo "./falconn-l1-cauchy -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_Cauchy} -u ${universe} -k {MAX_K} -w ${FALCONN_W_Cauchy} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}-$L -rf ./results/falconn_l1-$L-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}.txt"
         if [ $DEBUG == 0 ]
         then
-            ./falconn-l1-cauchy -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_Cauchy} -u ${universe} -k 50 -w ${FALCONN_W_Cauchy} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}-$L -rf ./results/falconn_l1-$L-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}.txt
+            ./falconn-l1-cauchy -d ${dim} -n ${n} -ds ../../${dsname}/${dstrainb} -l $L -t $L -m ${FALCONN_M_Cauchy} -u ${universe} -k {MAX_K} -w ${FALCONN_W_Cauchy} -gt ../../${dsname}/gnd.txt -qs ../../${dsname}/${dstestb} -qn ${qn} -if ./index-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}-$L -rf ./results/falconn_l1-$L-${FALCONN_M_Cauchy}-${FALCONN_W_Cauchy}.txt
         fi
     done
     echo "Done"
@@ -315,72 +311,7 @@ function RunFALCONN_cauchy {
 function CleanFALCONN_cauchy {
     echo "Clean FALCONN_cauchy ..."
     cd ${WORKING_DIR}
-    cd ../FALCONN
-    make clean
-    echo "Done"
-}
-
-
-
-# Compile SRS
-function CompileSRS {
-    cd ${WORKING_DIR}
-    echo "Compile SRS ..."
-    cd ../SRS
-    make clean
-    make srs-l1
-    chmod +x ./srs-l1    
-    cp ./srs-l1 ${WORKING_DIR}
-    cd ${WORKING_DIR}
-    echo "Done."
-}
-
-# Run SRS
-function RunSRS {
-
-    cd ${WORKING_DIR}
-    if [ ! -f ./srs-l1 ]; then
-        error_exit "Executable file ${WORKING_DIR}/srs-l1 does not exist, please compile it and copy it to ${WORKING_DIR} first ..."
-    fi
-
-    dsname=$1
-    dstrainb=$2
-    dstestb=$3
-    n=$4
-    qn=$5
-    dim=$6
-
-    printf "Run SRS on dataset %s ...\n" "${dsname}"
-
-    mkdir -p SRS/${dsname}/index
-    mkdir -p SRS/${dsname}/results
-    cp ./srs-l1 SRS/${dsname}
-    cd SRS/${dsname}
-
-    # echo "./srs-l1 -d $dim -n $n -ds ../../${dsname}/${dstrainb} -if index -m ${SRS_M}"
-    # if [ $DEBUG == 0 ]
-    # then
-    #     ./srs-l1 -d $dim -n $n -ds ../../${dsname}/${dstrainb} -if index -m ${SRS_M}
-    # fi
-
-    for t in "${SRS_T[@]}"
-    do
-        for k in "${SRS_K[@]}"
-            do
-            echo "./srs-l1 -d $dim -n $n -ds ../../${dsname}/${dstrainb} -qs ../../${dsname}/${dstestb} -if index -rf ./results/srs-$t.txt -gt ../../${dsname}/gnd.txt -qn $qn -t $t -k $k"
-            if [ $DEBUG == 0 ]
-            then
-            ./srs-l1 -d $dim -n $n -ds ../../${dsname}/${dstrainb} -qs ../../${dsname}/${dstestb} -if index -rf ./results/srs-$t-$k.txt -gt ../../${dsname}/gnd.txt -qn $qn -t $t -k $k
-            fi
-            done
-    done
-}
-
-# Clean SRS
-function CleanSRS {
-    echo "Clean SRS ..."
-    cd ${WORKING_DIR}
-    cd ../SRS
+    cd ../FALCONN_cauchy
     make clean
     echo "Done"
 }
@@ -388,30 +319,19 @@ function CleanSRS {
 # Clean all
 function clean_all
 {
-    CleanLinearScan
-    # CleanNSG
-    # CleanHNSW
-    # CleanFALCONN
-    # CleanFALCONN_cauchy
-    # CleanOPQ
-    # CleaniDEC
-    # CleaniDECSteal
-    CleanSRS
+    # CleanLinearScan
+    CleanFALCONN
+    CleanFALCONN_cauchy
+    CleanFALCONN_RW
 }
 
 # Run all algorithms
 function all
 {
 
-    # CompileLinearScan
-    # CompileNSG
-    # CompileHNSW
-    # CompileFALCONN
-    # CompileOPQ
     CompileFALCONN
+    CompileFALCONN_RW
     CompileFALCONN_cauchy
-    # CompileiDECSteal
-    CompileSRS
 
     # BuildKNNGraphs
     for ds in "${DATASETS[@]}"
@@ -432,20 +352,12 @@ function all
         dsh5=${ds_info[8]}
 
         # RunLinearScan $dsname $dsh5 $n $qn $dim
+        
+        RunFALCONN $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_tow $W_tow 
+        
+        RunFALCONN_cauchy $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_cauchy $W_cauchy
 
-        RunSRS $dsname $dstrainflat $dstestflat $n $qn $dim
-
-        RuniDEC $dsname $dstrainflat $dstestflat $n $qn $dim
-
-        # RuniDECSteal $dsname $dstrainflat $dstestflat $n $qn $dim
-
-        # RunHNSW $dsname $dstrainfvecs $dstestfvecs $n $qn $dim
-
-        # RunFALCONN $dsname $dstrainfvecs $dstestfvecs $n $qn $dim
-
-        # RunOPQ $dsname $dstrainfvecs $dstestfvecs $n $qn $dim
-
-        # RunNSG $dsname $dstrainfvecs $dstestfvecs $n $qn $dim
+        RunFALCONN_RW $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_tow $W_tow 
 
     done
 
@@ -459,14 +371,11 @@ function compile_single
         LinearScan)
             CompileLinearScan
             ;;
-        SRS)
-            CompileSRS
-            ;;
         FALCONN)
             CompileFALCONN
             ;;
-        FALCONN_ToW)
-            CompileFALCONN_ToW
+        FALCONN_RW)
+            CompileFALCONN_RW
             ;;
         FALCONN_cauchy)
             CompileFALCONN_cauchy
@@ -515,17 +424,14 @@ function single
             LinearScan)
                 RunLinearScan $dsname $dsh5 $n $qn $dim
                 ;;
-            SRS)
-                RunSRS $dsname $dstraintxt $dstesttxt $n $qn $dim
-                ;;
             FALCONN)
                 RunFALCONN $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_tow $W_tow 
                 ;;
             FALCONN_cauchy)
                 RunFALCONN_cauchy $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_cauchy $W_cauchy 
                 ;;
-            FALCONN_ToW)
-                RunFALCONN_ToW $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_tow $W_tow 
+            FALCONN_RW)
+                RunFALCONN_RW $dsname $dstrainfvecs $dstestfvecs $n $qn $dim $universe $M_tow $W_tow 
                 ;;
             *)
                 echo "Unknown option $1."

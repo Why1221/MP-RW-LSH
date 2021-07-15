@@ -267,7 +267,7 @@ class StaticLSHTable
       stats_.average_sketches_time += elapsed_sketches.count();
 
       stats_.average_num_candidates += num_candidates;
-      stats_.average_num_unique_candidates += result->size();
+      stats_.average_num_unique_candidates = result->size();
     }
   };
 

@@ -1,8 +1,0 @@
-audio%audio-l1-192-train.fvecs%audio-l1-192-test.fvecs%audio-l1-192-train.txt%audio-l1-192-test.txt%53387%192%200%audio-l1-192.h5%200000%12%3144%7%4401336
-MNIST%MNIST-l1-784-train.fvecs%MNIST-l1-784-test.fvecs%MNIST-l1-784-train.txt%MNIST-l1-784-test.txt%69000%784%200%MNIST-l1-784.h5%2000%12%930%8%384416
-Trevi%Trevi-l1-4096-train.fvecs%Trevi-l1-4096-test.fvecs%Trevi-l1-4096-train.txt%Trevi-l1-4096-test.txt%99900%4096%200%Trevi-l1-4096.h5%510%16%1728%7%561426
-deep10M%deep10M-l1-96-train.fvecs%deep10M-l1-96-test.fvecs%deep10M-l1-96-train.txt%deep10M-l1-96-test.txt%10000000%96%10000%deep10M-l1-96.h5%2272%17%424%6%34014
-GIST%GIST-l1-960-train.fvecs%GIST-l1-960-test.fvecs%GIST-l1-960-train.txt%GIST-l1-960-test.txt%1000000%960%1000%GIST-l1-960.h5%2954%8%452%6%153732
-glove%glove-l1-100-train.fvecs%glove-l1-100-test.fvecs%glove-l1-100-train.txt%glove-l1-100-test.txt%1192514%100%200%glove-l1-100.h5%24972%16%1104%8%303312
-sift50M%sift50M-l1-128-train.fvecs%sift50M-l1-128-test.fvecs%sift50M-l1-128-train.txt%sift50M-l1-128-test.txt%50000000%128%10000%sift50M-l1-128.h5%510%14%224%8%17336
-enron%enron-l1-1369-train.fvecs%enron-l1-1369-test.fvecs%enron-l1-1369-train.txt%enron-l1-1369-test.txt%94987%1369%200%enron-l1-1369.h5%504858%9%122%8%17336

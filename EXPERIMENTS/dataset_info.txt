@@ -1,1 +1,1 @@
-MNIST%MNIST-l1-784-train.fvecs%MNIST-l1-784-test.fvecs%MNIST-l1-784-train.txt%MNIST-l1-784-test.txt%69000%784%200%MNIST-l1-784.h5%2000%12%930%8%384416
+audio%audio-l1-192-train.fvecs%audio-l1-192-test.fvecs%audio-l1-192-train.txt%audio-l1-192-test.txt%53387%192%200%audio-l1-192.h5%200000%12%3144%7%4401336

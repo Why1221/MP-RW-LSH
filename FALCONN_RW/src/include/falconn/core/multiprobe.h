@@ -4,12 +4,13 @@
 #include <vector>
 #include "Eigen/Dense"
 #include "wyhash32.h"
+#include <fstream>
 
 #include "heap.h"
 #include "gaussian_hash.h"
 #include "lsh_function_helpers.h"
 // Set number of hash bits to 20
-const int hash_bits_sep = 21;
+//const int hash_bits_sep = 21;
 template<class C, class T>
 auto contains(const C v, const T& x)
 -> decltype(end(v), true)
@@ -299,11 +300,11 @@ class PreComputedMultiProbe : public MultiProbeBase<HashFunction>{
      typedef Eigen::Matrix<CoordinateType, Eigen::Dynamic, 1, Eigen::ColMajor>
       TransformedVectorType;
 
-    PreComputedMultiProbe(const HashFunction& parent)
+    PreComputedMultiProbe(const HashFunction& parent, unsigned num_probes)
         : hash_tran_(parent),
           k_(parent.k_),
           l_(parent.l_),
-          num_probes_(0),
+          num_probes_(num_probes),
           cur_probe_counter_(0),
           sorted_hyperplane_indices_(parent.l_),
           bucket_id_width_(parent.bucket_id_width_),
@@ -311,6 +312,7 @@ class PreComputedMultiProbe : public MultiProbeBase<HashFunction>{
           bucket_num_(1 << bucket_id_width_),
           hash_seed_(parent.seed_hash2_),
           hash_mask_(bucket_num_ - 1),
+          hash_width_(parent.hash_width_),
           main_table_probe_(parent.l_) {
       for (int_fast32_t ii = 0; ii < l_; ++ii) {
         sorted_hyperplane_indices_[ii].resize(2 * k_);
@@ -319,14 +321,17 @@ class PreComputedMultiProbe : public MultiProbeBase<HashFunction>{
           // indices from 0 to k, not sorted by delta now
           sorted_hyperplane_indices_[ii][jj] = jj;
         }
+
       }
 
     hash_vector_.resize(l_ * k_);
 
+    //std::cout << "multiprobe \t" << hash_seed_ << std::endl;
+
     SimpleHeap<double,std::vector<int_fast32_t>> heap_temp;
       // Generate the precomputed perturbation vector
       // each table number of probes,set to 100 now
-      int num_probes_each_table = 100;
+      int num_probes_each_table = num_probes / l_ - 1;
       // insert the best perturbation vector (stored in hash_mask) of every hash table
       // score is the precomputed value
       std::vector<int_fast32_t> temp_pert;
@@ -384,12 +389,16 @@ class PreComputedMultiProbe : public MultiProbeBase<HashFunction>{
     void setup_probing(const TransformedVectorType& hash_vector,
                        int_fast64_t num_probes) override {
       // hash_vector_ is the hash value of each hash functions in each hash table
+      //static std::ofstream fout("probe_hash.txt");
       for (int_fast32_t ii = 0; ii < l_; ++ii){
         for (int_fast32_t jj = 0; jj < k_; ++jj) {
           hash_vector_[ii * k_ + jj] = 
             static_cast<int_fast32_t>(std::floor(hash_vector(ii * k_ + jj)));
+            //fout << hash_vector_[ii * k_ + jj] << "\t";
         }
       }
+
+      //fout << std::endl;
 
       num_probes_ = num_probes;
       cur_probe_counter_ = -1;
@@ -474,7 +483,7 @@ class PreComputedMultiProbe : public MultiProbeBase<HashFunction>{
       
       *cur_probe = wyhash32(temp_hash_vector.data(), this->k_ * sizeof(int), hash_seed_);
       //std::cout << sizeof(int_fast32_t) << std::endl;
-      *cur_probe &= (1<<hash_bits_sep)-1;
+      *cur_probe &= (1<<hash_width_)-1;
 
 
 //       CoordinateType cur_score;
@@ -614,6 +623,7 @@ class PreComputedMultiProbe : public MultiProbeBase<HashFunction>{
     // h(data), center of probing
     std::vector<int_fast32_t> hash_vector_;
     HashTran hash_tran_;
+    int_fast32_t hash_width_;
 
     TransformedVectorType distance_vector_;
 };

@@ -8,16 +8,19 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <chrono>
 #include <vector>
 
 #include <AnnResultWriter.hpp>
 #include <Exception.h>
 #include <StringUtils.hpp>
 #include <Timer.hpp>
+#include <cstring>
 #include <cstdio>
 
 using namespace StringUtils;
-const size_t MAX_MEM = 1e10; // 10 GB
+const size_t MAX_MEM = 5e10; // 50 GB
+int used_step = 64; // Set the used steps 
 
 using std::cerr;
 using std::cout;
@@ -56,7 +59,7 @@ typedef DenseVector<float> Point;
 const int NUM_QUERIES = 1000;
 const int SEED = 4057218;
 const int NUM_HASH_TABLES = 50;
-const int NUM_HASH_BITS = 18;
+const int NUM_HASH_BITS = 21;
 const int NUM_ROTATIONS = 1;
 const int BUCKET_ID_WIDTH = 10; // Not used
 
@@ -273,6 +276,9 @@ void usage() {
   printf("-qn {string}   \trequired \tnumber of queries\n");
   printf("-rf {string}   \trequired \tresult file\n");
   printf("-if {string}   \trequired \tindex folder\n");
+  printf("-a {string}   \trequired \talgorithm of hashing\n");
+  printf("-sd {value}   \toptional \tseed\n");
+  printf("-hb {value}   \toptional \twidth of inner hash table\n");
 
   printf("\n");
   printf("Run falconn (indexing and querying)\n");
@@ -291,7 +297,12 @@ indexing(const char *ds_filename, // database filename
          unsigned num_hashfuncs, // parameter m (hash functions)
          unsigned bucket_width, // parameter w (bucket width)
          unsigned universe, //parameter u (dataset universe)
-         unsigned num_probes
+         unsigned num_probes,
+         GaussianFunctionType gauss_type,
+         int hash_width,
+         uint64_t seed,
+         bool load_index,
+         const char * index_path
 ) {
   read_dataset(ds_filename, &train);
 
@@ -304,16 +315,24 @@ indexing(const char *ds_filename, // database filename
   params.distance_function = DistanceFunction::L1Norm;
   // compute_number_of_hash_functions<Point>(num_hashbits, &params);
   params.multi_probe = MultiProbeType::Precomputed;
-  params.gauss_type = GaussianFunctionType::L1Precompute;
+  params.gauss_type = gauss_type;
   params.num_setup_threads = 1;
   params.storage_hash_table = StorageHashTable::FlatHashTable;
   params.bucket_id_width = BUCKET_ID_WIDTH;
   params.bucket_width = bucket_width*1.0;
   params.universe = universe;
+  params.hash_table_width = hash_width;
+  params.load_index = load_index;
+  params.index_filename = index_path;
+  params.step = used_step; 
+  if (seed > 0){
+    params.seed = seed;
+  }
 
   std::string perf_filename = join(
       {"falconn-ToW-indexing", "n" + std::to_string(num), "d" + std::to_string(dim),
-       "l" + std::to_string(num_hashes), "m" + std::to_string(num_hashfuncs),"t"+std::to_string(num_probes)},
+       "l" + std::to_string(num_hashes), "m" + std::to_string(num_hashfuncs),"t"+std::to_string(num_probes),
+        "now"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count())},
       "-");
   perf_filename += ".txt";
 
@@ -325,6 +344,7 @@ indexing(const char *ds_filename, // database filename
 
   HighResolutionTimer timer;
   timer.restart();
+
   auto table = construct_table<Point>(train, params);
   auto e = timer.elapsed();
 
@@ -350,6 +370,12 @@ void knn(LSHNearestNeighborTable<Point> *table, const std::vector<Point> &train,
   NPP_ENFORCE(test.size() == qn);
   NPP_ENFORCE(test.front().size() == dim);
 
+  char rf2[200] = "";
+  strcpy(rf2, r_filename);
+  int rf_len = strlen(rf2);
+  // crop .txt
+  rf2[rf_len - 4] = '\0';
+
   unsigned r_qn, r_maxk;
   FILE *fp = fopen(gt_filename, "r");
   NPP_ENFORCE(fp != NULL);
@@ -373,9 +399,10 @@ void knn(LSHNearestNeighborTable<Point> *table, const std::vector<Point> &train,
   printf("Reading gt finished\n");
 #endif
   HighResolutionTimer timer;
-  AnnResultWriter writer(r_filename);
+  AnnResultWriter writer(r_filename), writer_decom(strcat(rf2, "dcp.txt"));
 
   writer.writeRow("s", AnnResults::_DEFAULT_HEADER_I_);
+  //writer_decom.writeRow("s", "Total time\tLSH time\tMultiprobe time\tHash table time\tSketches time\tDistance time");
   unique_ptr<LSHNearestNeighborQuery<Point>> query_object =
       table->construct_query_object(num_probes);
 
@@ -396,7 +423,7 @@ void knn(LSHNearestNeighborTable<Point> *table, const std::vector<Point> &train,
 #ifdef DEBUG
     printf("Query finished for %d\n", i);
 #endif
-    for (unsigned j = 0; j < K; ++j) {
+    for (unsigned j = 0; j < K; ++j) {   // for every of the K results returned
       float dist = 0.0f;
       if (res.size() == K) {
         for (unsigned d = 0; d < dim; ++d) {
@@ -430,6 +457,15 @@ void knn(LSHNearestNeighborTable<Point> *table, const std::vector<Point> &train,
                         query_time);
       }
     }
+
+    QueryStatistics stat = query_object->get_query_statistics();
+      
+    // write decomposition of querying time
+    
+    writer_decom.writeRow("fffffff", stat.average_total_query_time, stat.average_lsh_time, stat.average_multiprobe_time,
+          stat.average_hash_table_time, stat.average_sketches_time,stat.average_num_unique_candidates*1.0f, stat.average_distance_time);
+
+
   }
 }
 
@@ -476,19 +512,24 @@ int main(int argc, char **argv) {
   char ds[200] = ""; // the file path of dataset
   char qs[200] = ""; // the file path of query set
   char gt[200] = ""; // the file path of ground truth
+  char algo[200] = "";
 
   char rf[200] = "";      // the folder path of results
   char indexf[200] = "."; // the folder path of results
 
   unsigned num_hashes = 0, num_hashfuncs = 0, num_probes = 0, universe = 0;
+  GaussianFunctionType gauss_type;
 
-  int bucket_width = -1;
+  int bucket_width = -1, hash_width = NUM_HASH_BITS;
 
   int cnt = 1;
   bool failed = false;
   char *arg;
   int i;
   char para[10];
+  uint64_t seed = 0;
+  bool load_index = false;
+  char idx_filename[200] = "";
 
   std::string err_msg;
   while (cnt < argc && !failed) {
@@ -585,7 +626,29 @@ int main(int argc, char **argv) {
       GetNextWord(arg, rf);
     } else if (strcmp(para, "if") == 0) {
       GetNextWord(arg, indexf);
-    } else {
+    } else if (strcmp(para, "a") == 0) {
+      GetNextWord(arg, algo);
+      if (strcmp(algo, "precompute")==0){
+        gauss_type = GaussianFunctionType::L1Precompute;
+        std::cout << "using precompute" << std::endl;
+      } else if (strcmp(algo, "dyasim")==0){
+        gauss_type = GaussianFunctionType::L1DyadicSim;
+        std::cout << "using dyadic simulation" << std::endl;
+      } else if (strcmp(algo, "cauchy")==0){
+        gauss_type = GaussianFunctionType::Cauchy;
+        std::cout << "using cauchy projection" << std::endl;
+      }
+    } else if (strcmp(para, "sd") == 0) {
+      seed = atoi(arg);
+    } else if (strcmp(para, "hb") == 0) {
+      hash_width = atoi(arg);
+    } else if (strcmp(para, "li") == 0) {
+      if (strcmp(arg, "true") == 0){
+        load_index = true;
+      }
+    } else if (strcmp(para, "lp") == 0) {
+      GetNextWord(arg, idx_filename);
+    }else {
       failed = true;
       fprintf(stderr, "Unknown option -%s!\n\n", para);
     }
@@ -599,7 +662,7 @@ int main(int argc, char **argv) {
 
   int nargs = (cnt - 1) / 2;
 
-  if (!(nargs == 12 || nargs == 13 || nargs == 14)) {
+  if (!(nargs < 18)) {
     fprintf(stderr, "%s:%d: %s\n\n", __FILE__, __LINE__,
             "Wrong number of arguements!");
     usage();
@@ -625,7 +688,7 @@ int main(int argc, char **argv) {
     NPP_ENFORCE(num_hashes > 0 && num_probes > 0 && num_hashfuncs > 0 &&
                 nPoints > 0 && universe>0 && bucket_width >0 && pointsDimension > 0);
     auto table = indexing(ds, indexf, train, nPoints, pointsDimension,
-                          num_hashes, num_hashfuncs,bucket_width,universe,num_probes);
+                          num_hashes, num_hashfuncs,bucket_width,universe,num_probes, gauss_type, hash_width, seed, load_index, idx_filename);
 
     knn(&*table, train, qs, gt, rf, nPoints, pointsDimension, qn, k,
         num_probes);

@@ -320,7 +320,7 @@ class LSHNNQueryWrapper : public LSHNearestNeighborQuery<PointType, KeyType> {
       throw LSHNearestNeighborTableError(
           "Number of probes must be at least 1.");
     }
-    internal_query_.reset(new typename LSHTable::Query(parent));
+    internal_query_.reset(new typename LSHTable::Query(parent, num_probes));
     internal_nn_query_.reset(
         new NNQueryType(internal_query_.get(), data_storage));
   }
@@ -413,7 +413,7 @@ class LSHNNQueryPool : public LSHNearestNeighborQueryPool<PointType, KeyType> {
     }
     for (int ii = 0; ii < num_query_objects; ++ii) {
       std::unique_ptr<typename LSHTable::Query> cur_query(
-          new typename LSHTable::Query(parent));
+          new typename LSHTable::Query(parent, num_probes));
       std::unique_ptr<NNQueryType> cur_nn_query(
           new NNQueryType(cur_query.get(), data_storage));
       internal_queries_.push_back(std::move(cur_query));
@@ -681,8 +681,8 @@ class StaticTableFactory {
             points_));
 
     ComputeNumberOfHashBits<PointType> helper;
-    num_bits_ = 22; // Current hash bits is set to 20;
-
+    //num_bits_ = 22; // Current hash bits is set to 20;
+    num_bits_ = params_.hash_table_width;
     n_ = data_storage_->size();
 
     setup0();
@@ -753,20 +753,17 @@ class StaticTableFactory {
       typedef typename core::GaussianHashDense<CoordinateType, HashType> LSH;
       std::unique_ptr<LSH> lsh(new LSH(params_.dimension, params_.k, params_.l,params_.universe,
                                        params_.seed ^ 93384688, params_.bucket_width, 
-                                       params_.bucket_id_width));
+                                       params_.bucket_id_width, params_.hash_table_width));
       setup2(std::tuple_cat(vals, std::make_tuple(std::move(lsh))));
     }
     else if (params_.gauss_type == GaussianFunctionType::L1Precompute) {
       typedef typename wrapper::PointTypeTraitsInternal<PointType>::CoorT CoordinateType;
       typedef typename core::ToWHashDense<CoordinateType, HashType> LSH;
-      std::unique_ptr<LSH> lsh(new LSH(params_.dimension, params_.k, params_.l,params_.universe,
+      std::unique_ptr<LSH> lsh(new LSH(params_.dimension, params_.k, params_.l,params_.universe,params_.step,
                                        params_.seed ^ 93384688, params_.bucket_width, 
-                                       params_.bucket_id_width));
+                                       params_.bucket_id_width, params_.hash_table_width));
       setup2(std::tuple_cat(vals, std::make_tuple(std::move(lsh))));
     }
-    // else if (params_.gauss_type == GaussianFunctionType::L1DyadicSim) {
-    //   //dyadic here
-    // }
     // else {
     //         throw LSHNNTableSetupError(
     //       "Unknown hash function type. Maybe you forgot to set "
@@ -820,14 +817,14 @@ class StaticTableFactory {
       std::unique_ptr<typename HashTable::Factory> factory(
           new typename HashTable::Factory(1 << num_bits_));
 
-      typedef core::StaticCompositeHashTable<HashType, KeyType, HashTable>
+      typedef core::StaticCompositeHashTable2<HashType, KeyType, HashTable>
           CompositeTable;
       std::unique_ptr<CompositeTable> composite_table(
           new CompositeTable(params_.l, factory.get()));
       setup4(std::tuple_cat(std::move(vals),
                             std::make_tuple(std::move(factory)),
                             std::make_tuple(std::move(composite_table))));
-    } else if (params_.storage_hash_table ==
+    }/* else if (params_.storage_hash_table ==
                StorageHashTable::BitPackedFlatHashTable) {
       typedef core::BitPackedFlatHashTable<HashType> HashTable;
       std::unique_ptr<typename HashTable::Factory> factory(
@@ -865,7 +862,7 @@ class StaticTableFactory {
       setup4(std::tuple_cat(std::move(vals),
                             std::make_tuple(std::move(factory)),
                             std::make_tuple(std::move(composite_table))));
-    } else {
+    }*/ else {
       throw LSHNNTableSetupError(
           "Unknown storage hash table type. Maybe you "
           "forgot to set the hash table type in the parameter struct?");
@@ -965,7 +962,7 @@ class StaticTableFactory {
         LSHTableType;
     std::unique_ptr<LSHTableType> lsh_table(
         new LSHTableType(lsh.get(), composite_table.get(), *data_storage_,
-                         params_.num_setup_threads));
+                         params_.num_setup_threads, params_.load_index, params_.index_filename));
 
     table_.reset(new LSHNNTableWrapper<PointType, KeyType, ScalarType,
                                        DistanceFunctionType, LSHTableType,

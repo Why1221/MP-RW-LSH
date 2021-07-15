@@ -19,7 +19,7 @@ CXX=g++
 CXXFLAGS=-std=c++14 -w -march=native -O3 -I external/eigen -I src/include -I external/simple-serializer -I external/nlohmann -I external/wyhash -I../Common
 LDFLAGS=-pthread
 NUMPY_INCLUDE_DIR= $(shell python -c "import numpy; print(numpy.get_include())")
-TARGETS = falconn-l1 falconn-l1-cauchy
+TARGETS = falconn-l1-rw falconn-l1-cauchy
 
 
 all: $(TARGETS)
@@ -70,7 +70,7 @@ random_benchmark: $(BENCH_DIR)/random_benchmark.cc $(ALL_HEADERS)
 falconn: FalconnMain.cc 
 	-$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-falconn-l1: FalconnMain_l1_test.cc 
+falconn-l1-rw: FalconnMain_l1_test.cc 
 	-$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
 falconn-l1-cauchy: FalconnMain_l1_cauchy.cc 

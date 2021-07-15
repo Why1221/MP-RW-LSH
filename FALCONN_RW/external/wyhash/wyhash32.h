@@ -23,12 +23,12 @@ static inline unsigned wyhash32(const void *key, uint64_t len, unsigned seed) {
   if(i>=4){ seed^=_wyr32(p); see1^=_wyr32(p+i-4); } else if (i) seed^=_wyr24(p,i);
   _wymix32(&seed, &see1); _wymix32(&seed, &see1); return seed^see1;
 }
-static inline uint64_t wyrand(uint64_t *seed){  
-  *seed+=0xa0761d6478bd642full; 
-  uint64_t  see1=*seed^0xe7037ed1a0b428dbull;
-  see1*=(see1>>32)|(see1<<32);
-  return  (*seed*((*seed>>32)|(*seed<<32)))^((see1>>32)|(see1<<32));
-}
+// static inline uint64_t wyrand(uint64_t *seed){  
+//   *seed+=0xa0761d6478bd642full; 
+//   uint64_t  see1=*seed^0xe7037ed1a0b428dbull;
+//   see1*=(see1>>32)|(see1<<32);
+//   return  (*seed*((*seed>>32)|(*seed<<32)))^((see1>>32)|(see1<<32));
+// }
 static inline unsigned wy32x32(unsigned a,  unsigned  b) { _wymix32(&a,&b); _wymix32(&a,&b); return a^b;  }
 static inline float wy2u01(unsigned r) { const float _wynorm=1.0f/(1ull<<23); return (r>>9)*_wynorm;}
 static inline float wy2gau(unsigned r) { const float _wynorm=1.0f/(1ull<<9); 

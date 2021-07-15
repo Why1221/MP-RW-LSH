@@ -6,7 +6,7 @@
 #include <memory>
 #include <type_traits>
 #include <vector>
-
+#include <string>
 #include <Eigen/Dense>
 
 #include "falconn_global.h"
@@ -386,6 +386,8 @@ struct LSHConstructionParameters {
   /// Number of hash tables. Required for all the hash families.
   ///
   int_fast32_t l = -1;
+  /// Number to jump for random walk
+  int step = -1;
   ///
   /// Low-level storage hash table.
   ///
@@ -433,6 +435,12 @@ struct LSHConstructionParameters {
   int_fast32_t bucket_id_width = -1;
   // Universe of database
   int_fast32_t universe = 1;
+  // bit width of the underlying hash table
+  int_fast32_t hash_table_width = 1;
+  // use existing index file or to create a new one
+  bool load_index = false;
+  // filename of index file
+  std::string index_filename = "";
 };
 
 ///
