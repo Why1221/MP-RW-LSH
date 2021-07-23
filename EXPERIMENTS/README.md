@@ -23,5 +23,7 @@ options:
 
 ### Algorithms name in paper
 FALCONN: MP-RW-LSH
+
 FALCONN_cauchy: CP-LSH
+
 FALCONN_RW: RW-LSH
