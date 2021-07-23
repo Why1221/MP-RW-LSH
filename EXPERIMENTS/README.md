@@ -20,3 +20,8 @@ options:
  -h: print this (H)elp message
  -r <alg>: only run <alg>, where <alg>=LinearScan|FALCONN|FALCONN_cauchy|FALCONN_RW
 ```
+
+### Algorithms name in paper
+FALCONN: MP-RW-LSH
+FALCONN_cauchy: CP-LSH
+FALCONN_RW: RW-LSH
