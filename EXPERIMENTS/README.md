@@ -1,6 +1,6 @@
 # Experiments for In-Memory ANN Search Algorithms
 
-## Please install Highfive(https://github.com/BlueBrain/HighFive) first before running the experiments.
+### Please install Highfive(https://github.com/BlueBrain/HighFive) first before running the experiments.
 
 ## Usage
 
