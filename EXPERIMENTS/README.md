@@ -27,9 +27,3 @@ options:
 ```
 Make sure to run **LinearScan** before running **FALCONN** algorithms.
 
-### Algorithms name in paper
-FALCONN: MP-RW-LSH
-
-FALCONN_cauchy: CP-LSH
-
-FALCONN_RW: RW-LSH
