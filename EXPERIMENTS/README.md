@@ -20,6 +20,12 @@ options:
  -h: print this (H)elp message
  -r <alg>: only run <alg>, where <alg>=LinearScan|FALCONN|FALCONN_cauchy|FALCONN_RW
 ```
+## Running Example
+```bash
+./run_l1.sh -r LinearScan
+./run_l1.sh -r FALCONN
+```
+Make sure to run **LinearScan** before running **FALCONN** algorithms.
 
 ### Algorithms name in paper
 FALCONN: MP-RW-LSH
